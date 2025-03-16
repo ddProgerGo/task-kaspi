@@ -13,12 +13,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Не удалось подключиться к базе данных", err)
 	}
+	
+	database.RunMigrations(db)
+
 	r := gin.Default()
 
-	// Регистрация маршрутов
 	handler.RegisterRoutes(r, db)
 
-	// Запуск сервера
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера", err)
 	}
