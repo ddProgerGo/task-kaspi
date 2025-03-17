@@ -21,25 +21,27 @@ services:
     ports:
       - "6379:6379"
 
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: task-kaspi-app
-  #   restart: always
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_USER: postgres
-  #     DB_PASSWORD: password
-  #     DB_NAME: task_kaspi
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #   ports:
-  #     - "8080:8080"
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-kaspi-app
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: mysecurepassword
+      DB_NAME: postgres
+      REDIS_HOST: redis:6379
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:

@@ -1,0 +1,152 @@
+definitions:
+  models.Person:
+    properties:
+      id:
+        type: integer
+      iin:
+        type: string
+      name:
+        maxLength: 50
+        minLength: 2
+        type: string
+      phone:
+        type: string
+    required:
+    - iin
+    - name
+    - phone
+    type: object
+info:
+  contact: {}
+paths:
+  /check-iin/{iin}:
+    get:
+      consumes:
+      - application/json
+      description: Checks if the provided IIN is valid
+      parameters:
+      - description: IIN number
+        in: path
+        name: iin
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validate IIN
+      tags:
+      - IIN
+  /get-people/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of people matching the provided name
+      parameters:
+      - description: Person name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Results per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Person'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get people by name with pagination
+      tags:
+      - Person
+  /get-person/{iin}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves person details by IIN
+      parameters:
+      - description: IIN number
+        in: path
+        name: iin
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Person'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get person by IIN
+      tags:
+      - Person
+  /save-person:
+    post:
+      consumes:
+      - application/json
+      description: Saves a new person to the database
+      parameters:
+      - description: Person data
+        in: body
+        name: person
+        required: true
+        schema:
+          $ref: '#/definitions/models.Person'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Save a person
+      tags:
+      - Person
+swagger: "2.0"
