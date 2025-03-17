@@ -34,7 +34,7 @@ func main() {
 	}
 
 	cache := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: os.Getenv("REDIS_HOST"),
 	})
 
 	_, err = cache.Ping(context.Background()).Result()
