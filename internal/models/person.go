@@ -1,7 +1,8 @@
 package models
 
 type Person struct {
-	Name  string `json:"name"`
-	IIN   string `json:"iin"`
-	Phone string `json:"phone"`
+	ID    int    `json:"id"`
+	Name  string `json:"name" validate:"required,min=2,max=50"`
+	IIN   string `json:"iin" validate:"required,len=12,numeric"`
+	Phone string `json:"phone" validate:"required,len=11,numeric"`
 }

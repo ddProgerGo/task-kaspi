@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const typeDate = "02.01.2006"
+
 type IINInfo struct {
 	Correct     bool   `json:"correct"`
 	Sex         string `json:"sex"`
@@ -60,7 +62,7 @@ func ValidateIIN(iin string) (*IINInfo, error) {
 	return &IINInfo{
 		true,
 		gender,
-		dateOfBirth.Format("02.01.2006"),
+		dateOfBirth.Format(typeDate),
 	}, nil
 }
 

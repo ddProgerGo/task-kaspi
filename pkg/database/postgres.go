@@ -11,7 +11,7 @@ import (
 )
 
 func ConnectPostgres() (*sql.DB, error) {
-	err := godotenv.Load()
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println("Ошибка загрузки .env файла:", err)
 	}
@@ -36,18 +36,20 @@ func ConnectPostgres() (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Println("✅ Успешное подключение к базе данных")
+	log.Println("Успешное подключение к базе данных")
 	return db, nil
 }
 
 func RunMigrations(db *sql.DB) {
 	migrations := []string{
 		`CREATE TABLE IF NOT EXISTS people (
-			id SERIAL PRIMARY KEY,
-			name VARCHAR(255) NOT NULL,
-			iin VARCHAR(12) UNIQUE NOT NULL,
-			phone VARCHAR(20) NOT NULL
+    		id SERIAL PRIMARY KEY,
+    		name TEXT NOT NULL,
+    		iin CHAR(12) UNIQUE NOT NULL CHECK (iin ~ '^[0-9]{12}$'), 
+    		phone VARCHAR(20) NOT NULL CHECK (phone ~ '^[0-9+\-() ]+$')
 		);`,
+		`CREATE INDEX IF NOT EXISTS idx_people_name ON people (name);
+		 CREATE INDEX IF NOT EXISTS idx_people_iin ON people (iin);`,
 	}
 
 	for _, query := range migrations {

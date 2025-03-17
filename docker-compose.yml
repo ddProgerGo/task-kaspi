@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: task-kaspi-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecurepassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: task-kaspi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: task-kaspi-app
+  #   restart: always
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_USER: postgres
+  #     DB_PASSWORD: password
+  #     DB_NAME: task_kaspi
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #   ports:
+  #     - "8080:8080"
+
+volumes:
+  postgres_data:
