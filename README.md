@@ -56,7 +56,7 @@ go run cmd/server/main.go
 Response:
 {
     "data": [
-        { "name": "John Doe", "iin": "123456789012", "phone": "+77011234567" }
+        { "name": "John Doe", "iin": "123456789012", "phone": "77011234567" }
     ],
     "page": 1,
     "limit": 10,
@@ -76,14 +76,14 @@ Request:
 {
     "name": "John Doe",
     "iin": "123456789012",
-    "phone": "+77011234567"
+    "phone": "77011234567"
 }
 ```
 ### 4. Получение человека по ИИН
 **GET /people/info/iin/{iin}**
 ```json
 Response:
-{ "name": "John Doe", "iin": "123456789012", "phone": "+77011234567" }
+{ "name": "John Doe", "iin": "123456789012", "phone": "77011234567" }
 ```
 
 ## Доступ к Swagger UI
