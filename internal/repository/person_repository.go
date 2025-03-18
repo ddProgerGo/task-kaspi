@@ -19,7 +19,7 @@ type PersonRepository struct {
 }
 
 func NewPersonRepository(db *sql.DB, logger *logrus.Logger, cache *redis.Client) *PersonRepository {
-	return &PersonRepository{DB: db, Logger: logger}
+	return &PersonRepository{DB: db, Logger: logger, Cache: cache}
 }
 
 func (r *PersonRepository) SavePerson(person models.Person) error {
