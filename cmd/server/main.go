@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ddProgerGo/task-kaspi/internal/handler"
+	"github.com/ddProgerGo/task-kaspi/internal/middleware"
 	"github.com/ddProgerGo/task-kaspi/internal/repository"
 	"github.com/ddProgerGo/task-kaspi/internal/service"
 	"github.com/ddProgerGo/task-kaspi/pkg/database"
@@ -59,6 +60,8 @@ func main() {
 
 	router := gin.Default()
 
+	router.Use(middleware.ErrorHandlingMiddleware(logger))
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.GET("/iin_check/:iin", handler.CheckIIN)
@@ -67,7 +70,7 @@ func main() {
 	router.GET("/people/info/phone/:name", handler.GetPeopleByName)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    os.Getenv("ADDRESS"),
 		Handler: router,
 	}
 

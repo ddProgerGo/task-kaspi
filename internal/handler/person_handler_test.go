@@ -32,9 +32,9 @@ func (m *MockPersonService) GetPersonByIIN(iin string) (*models.Person, error) {
 	return args.Get(0).(*models.Person), args.Error(1)
 }
 
-func (m *MockPersonService) GetPeopleByName(name string, page, limit int) ([]models.Person, error) {
+func (m *MockPersonService) GetPeopleByName(name string, page, limit int) ([]models.Person, int, error) {
 	args := m.Called(name, page, limit)
-	return args.Get(0).([]models.Person), args.Error(1)
+	return args.Get(0).([]models.Person), 0, args.Error(1)
 }
 
 func TestGetPersonByIIN(t *testing.T) {

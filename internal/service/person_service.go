@@ -3,13 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"log"
 	"time"
 
 	"github.com/ddProgerGo/task-kaspi/internal/models"
 	"github.com/ddProgerGo/task-kaspi/internal/repository"
 	"github.com/ddProgerGo/task-kaspi/internal/utils"
+	"github.com/ddProgerGo/task-kaspi/pkg/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
@@ -33,30 +32,37 @@ func NewPersonService(repo repository.PersonRepositoryInterface, logger *logrus.
 
 func (s *PersonService) SavePerson(person models.Person) error {
 	if err := s.validate.Struct(person); err != nil {
-		return err
+		return errors.ErrBadRequest
 	}
 
 	if _, err := utils.ValidateIIN(person.IIN); err != nil {
 		s.Logger.WithError(err).Warn("Invalid IIN format")
-		return errors.New("Invalid IIN")
+		return err
 	}
+
 	err := s.repo.SavePerson(person)
 	if err != nil {
-		s.Logger.WithError(err).Error("Failed to save person")
-	} else {
-		s.Logger.Info("Person saved successfully: ", person.IIN)
+		s.Logger.WithError(err).Error("Failed to save person: ", err)
+		return err
 	}
-	return err
+
+	s.Logger.Info("Person saved successfully: ", person.IIN)
+	return nil
 }
 
 func (s *PersonService) GetPersonByIIN(iin string) (*models.Person, error) {
 	ctx := context.Background()
 
+	if _, err := utils.ValidateIIN(iin); err != nil {
+		s.Logger.WithError(err).Warn("Invalid IIN format")
+		return nil, err
+	}
+
 	cached, err := s.Cache.Get(ctx, iin).Result()
 	if err == nil {
 		var person models.Person
 		if err := json.Unmarshal([]byte(cached), &person); err == nil {
-			log.Println("Данные загружены из кеша")
+			s.Logger.Info("Data loaded from cache for IIN: ", iin)
 			return &person, nil
 		}
 	}
@@ -64,18 +70,25 @@ func (s *PersonService) GetPersonByIIN(iin string) (*models.Person, error) {
 	person, err := s.repo.GetPersonByIIN(iin)
 	if err != nil {
 		s.Logger.WithError(err).Error("Failed to fetch person by IIN")
+		return nil, err
 	}
 
-	data, _ := json.Marshal(person)
-	s.Cache.Set(ctx, iin, data, 10*time.Minute)
+	data, err := json.Marshal(person)
+	if err != nil {
+		s.Logger.WithError(err).Error("Failed to serialize person data for caching")
+		return nil, errors.ErrInternalServer
+	}
 
-	return person, err
+	if err := s.Cache.Set(ctx, iin, data, 10*time.Minute).Err(); err != nil {
+		s.Logger.WithError(err).Error("Failed to cache person data")
+	}
+	return person, nil
 }
 
-func (s *PersonService) GetPeopleByName(name string, page int, limit int) ([]models.Person, error) {
-	people, err := s.repo.GetPeopleByName(name, page, limit)
+func (s *PersonService) GetPeopleByName(name string, page int, limit int) ([]models.Person, int, error) {
+	people, total, err := s.repo.GetPeopleByName(name, page, limit)
 	if err != nil {
 		s.Logger.WithError(err).Error("Failed to fetch people by name")
 	}
-	return people, err
+	return people, total, err
 }

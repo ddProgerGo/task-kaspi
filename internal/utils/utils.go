@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"errors"
 	"strconv"
 	"time"
+
+	"github.com/ddProgerGo/task-kaspi/pkg/errors"
 )
 
 const typeDate = "02.01.2006"
@@ -16,12 +17,12 @@ type IINInfo struct {
 
 func ValidateIIN(iin string) (*IINInfo, error) {
 	if len(iin) != 12 {
-		return nil, errors.New("ИИН должен содержать 12 цифр")
+		return nil, errors.ErrInvalidIINLength
 	}
 
 	for _, r := range iin {
 		if r < '0' || r > '9' {
-			return nil, errors.New("ИИН должен содержать только цифры")
+			return nil, errors.ErrInvalidIINFormat
 		}
 	}
 
@@ -41,7 +42,7 @@ func ValidateIIN(iin string) (*IINInfo, error) {
 	case 5, 6:
 		fullYear = 2000 + year
 	default:
-		return nil, errors.New("Некорректный 7-й символ в ИИН")
+		return nil, errors.ErrInvalidCenturyCode
 	}
 
 	if centuryGender%2 == 1 {
@@ -52,11 +53,11 @@ func ValidateIIN(iin string) (*IINInfo, error) {
 
 	dateOfBirth := time.Date(fullYear, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 	if dateOfBirth.Month() != time.Month(month) || dateOfBirth.Day() != day {
-		return nil, errors.New("Некорректная дата рождения в ИИН")
+		return nil, errors.ErrInvalidDateOfBirth
 	}
 
 	if !isValidChecksum(iin) {
-		return nil, errors.New("Некорректная контрольная цифра ИИН")
+		return nil, errors.ErrInvalidIINChecksum
 	}
 
 	return &IINInfo{

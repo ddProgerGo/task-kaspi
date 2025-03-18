@@ -7,6 +7,7 @@ import (
 	"github.com/ddProgerGo/task-kaspi/internal/models"
 	"github.com/ddProgerGo/task-kaspi/internal/service"
 	"github.com/ddProgerGo/task-kaspi/internal/utils"
+	"github.com/ddProgerGo/task-kaspi/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +37,7 @@ func (h *PersonHandler) CheckIIN(c *gin.Context) {
 	info, err := utils.ValidateIIN(iin)
 	if err != nil {
 		h.Logger.WithError(err).Warn("Invalid IIN check")
-		c.JSON(http.StatusBadRequest, gin.H{"correct": false, "errors": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -59,13 +60,18 @@ func (h *PersonHandler) SavePerson(c *gin.Context) {
 	var person models.Person
 	if err := c.ShouldBindJSON(&person); err != nil {
 		h.Logger.WithError(err).Warn("Invalid request format")
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": "Invalid data format"})
+		c.Error(errors.ErrBadRequest)
 		return
 	}
 
 	if err := h.service.SavePerson(person); err != nil {
 		h.Logger.WithError(err).Error("Failed to save person")
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "errors": err.Error()})
+
+		if appErr, ok := err.(*errors.AppError); ok {
+			c.Error(&errors.AppError{Code: appErr.Code, Message: appErr.Message, IsDefault: true})
+		} else {
+			c.Error(&errors.AppError{Code: http.StatusInternalServerError, Message: err.Error(), IsDefault: true})
+		}
 		return
 	}
 
@@ -86,19 +92,17 @@ func (h *PersonHandler) SavePerson(c *gin.Context) {
 func (h *PersonHandler) GetPersonByIIN(c *gin.Context) {
 	iin := c.Param("iin")
 
-	_, err := utils.ValidateIIN(iin)
+	person, err := h.service.GetPersonByIIN(iin)
 	if err != nil {
-		h.Logger.WithError(err).Warn("Invalid IIN check")
-		c.JSON(http.StatusInternalServerError, gin.H{"correct": false, "errors": err.Error()})
+		if appErr, ok := err.(*errors.AppError); ok {
+			c.Error(&errors.AppError{Code: appErr.Code, Message: appErr.Message, IsDefault: true})
+		} else {
+			c.Error(errors.ErrNotFound)
+		}
 		return
 	}
 
-	person, err := h.service.GetPersonByIIN(iin)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"success": false, "errors": "Пользователь не найден"})
-		return
-	}
-	c.JSON(http.StatusOK, person)
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": person})
 }
 
 // GetPeopleByName godoc
@@ -116,29 +120,36 @@ func (h *PersonHandler) GetPersonByIIN(c *gin.Context) {
 func (h *PersonHandler) GetPeopleByName(c *gin.Context) {
 	name := c.Param("name")
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		h.Logger.Warn("Invalid page number")
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": "Invalid page number"})
+		return
 	}
 
-	people, err := h.service.GetPeopleByName(name, page, limit)
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		h.Logger.Warn("Invalid limit number")
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": "Invalid limit number"})
+		return
+	}
+
+	people, total, err := h.service.GetPeopleByName(name, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "errors": "Error search"})
+		h.Logger.WithError(err).Error("Error searching people")
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "errors": "Error searching people"})
 		return
 	}
 
 	if len(people) <= 0 {
+		h.Logger.Warn("No people found for name:", name)
 		people = []models.Person{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    people,
+		"total":   total,
 		"page":    page,
 		"limit":   limit,
 	})
